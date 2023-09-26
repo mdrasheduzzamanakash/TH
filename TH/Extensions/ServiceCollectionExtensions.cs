@@ -1,15 +1,21 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Configuration;
+using System.Text;
 using TH.Configurations;
 using TH.Data;
 using TH.Mapper;
+using TH.Middlewares;
 
 namespace TH.Extensions
 {
     public static class ServiceCollectionExtensions
     {
+        
         public static void ConfigureApplicationServices(this IServiceCollection services,
             WebApplicationBuilder builder)
         {
@@ -24,13 +30,19 @@ namespace TH.Extensions
             builder.Services.AddIdentity<IdentityUser, IdentityRole>()
                 .AddEntityFrameworkStores<AppDbContext>()
                 .AddDefaultTokenProviders();
-
+            
             // For authentication 
             builder.Services.AddAuthentication(options =>
             {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultSignOutScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            }).AddCookie(options =>
+            {
+                options.Cookie.Name = "jwt";
+                options.LoginPath = "/Auth/Login";
+                options.LogoutPath = "/Auth/Logout";
             });
 
 
@@ -90,6 +102,8 @@ namespace TH.Extensions
             app.UseStaticFiles();
 
             app.UseRouting();
+
+            app.UseRefreshTokenMiddleware();
 
             app.UseAuthentication();
 

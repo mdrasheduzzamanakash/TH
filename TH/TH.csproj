@@ -26,9 +26,9 @@
   <ItemGroup>
     <Folder Include="Areas\Admin\Data\" />
     <Folder Include="Areas\Admin\Models\" />
-    <Folder Include="Domains\" />
     <Folder Include="Factories\" />
-    <Folder Include="Models\Authentication\Login\" />
+    <Folder Include="Attributes\" />
+    <Folder Include="Validations\" />
     <Folder Include="Services\" />
   </ItemGroup>
 

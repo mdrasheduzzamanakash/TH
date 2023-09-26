@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace TH.Models.Authentication.Register
+namespace TH.Models
 {
-    public class Register : BaseModel
+    public class LoginModel : BaseModel
     {
         [Required(ErrorMessage = "Email is required")]
         public string Email { get; set; }
