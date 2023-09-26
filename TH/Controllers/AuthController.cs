@@ -94,13 +94,20 @@ namespace TH.Controllers
 
                 var jwtToken = GetToken(authClaims);
                 var token = new JwtSecurityTokenHandler().WriteToken(jwtToken);
+
+                // generate refresh token 
+
+                // add cookies (jwt + refresh)
+
             }
 
-            return View(model);
+            return RedirectToAction("Index", "Home");
         }
 
         public IActionResult Logout()
         {
+            // TODO : clear the cookies 
+
             return RedirectToAction("Index", "Home");
         }
 
@@ -152,9 +159,13 @@ namespace TH.Controllers
                 // Add token to verify the email 
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                 var confirmationLink = Url.Action(nameof(ConfirmEmail), "Authentication", new {token, email = user.Email});
-                // Create an email and send it 
 
+                // TODO : create a email service 
+                // Create an email and send it 
                 // assign token with email not confirmed 
+
+                // create a token as RegisteredUnvarified
+                // set cookies 
 
                 return RedirectToAction("Index","Home");
             } 
@@ -175,12 +186,12 @@ namespace TH.Controllers
                 var result = await _userManager.ConfirmEmailAsync(user, token);
                 if(result.Succeeded)
                 {
-                    // assign token with email confirmed 
+                    // TODO : create token with registered role 
+                    // assign the cookie
                 }
             }
             return View();
         }
-
 
         #endregion
     }
