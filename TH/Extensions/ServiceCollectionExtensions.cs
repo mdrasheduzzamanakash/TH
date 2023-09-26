@@ -78,7 +78,6 @@ namespace TH.Extensions
 
         public static void AddMiddlewares(this WebApplication app)
         {
-
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {
@@ -95,7 +94,6 @@ namespace TH.Extensions
                     c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
                 });
             }
-
 
             app.UseHttpsRedirection();
 

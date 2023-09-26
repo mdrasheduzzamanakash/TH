@@ -9,7 +9,7 @@ namespace TH.Data
     {
         #region Application part 
 
-        public virtual DbSet<Customers> Customers { get; set; }
+        public virtual DbSet<Customer> Customers { get; set; }
         public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
 
         #endregion
