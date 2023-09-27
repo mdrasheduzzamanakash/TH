@@ -49,7 +49,7 @@
             // Attach an event handler to the checkbox change event
             $("#doctorCheckbox").change(function () {
                 var isChecked = $(this).is(":checked");
-                var roleValue = isChecked ? "doctor" : "patient";
+                var roleValue = isChecked ? @THDefaults.Doctor : @THDefaults.Patient;
 
                 // Set the 'role' input field value
                 $("#roleInput").val(roleValue);

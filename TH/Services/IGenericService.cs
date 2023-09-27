@@ -3,10 +3,10 @@
     public interface IGenericService<T> where T : class
     {
         Task<IEnumerable<T>> GetAllAsync();
-        Task<T?> GetByIdAsync(int id);
+        Task<T?> GetByIdAsync(string id);
         Task<T?> InsertAsync(T entity);
-        Task<T?> UpdateAsync(T entity, int id);
-        Task<bool> DeleteAsync(int id);
+        Task<T?> UpdateAsync(T entity, string id);
+        Task<bool> DeleteAsync(string id);
 
     }
 }

@@ -11,6 +11,8 @@ namespace TH.Data
 
         public virtual DbSet<Customer> Customers { get; set; }
         public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
+        public virtual DbSet<Log> Logs { get; set; }
+
 
         #endregion
 
@@ -29,12 +31,12 @@ namespace TH.Data
         {
             builder.Entity<IdentityRole>().HasData
                 (
-                    new IdentityRole() { Name = "Admin", ConcurrencyStamp = "1", NormalizedName = "Admin"},
-                    new IdentityRole() { Name = "Registered", ConcurrencyStamp = "2", NormalizedName = "Registered" },
-                    new IdentityRole() { Name = "Doctor", ConcurrencyStamp = "3", NormalizedName = "Doctor" },
-                    new IdentityRole() { Name = "DoctorUnvarified", ConcurrencyStamp = "4", NormalizedName = "DoctorUnvarified" },
-                    new IdentityRole() { Name = "Patient", ConcurrencyStamp = "5", NormalizedName = "Patient" },
-                    new IdentityRole() { Name = "Guest", ConcurrencyStamp = "6", NormalizedName = "Guest" }
+                    new IdentityRole() { Name = THDefaults.Admin, ConcurrencyStamp = "1", NormalizedName = "Admin"},
+                    new IdentityRole() { Name = THDefaults.Doctor, ConcurrencyStamp = "2", NormalizedName = "Doctor" },
+                    new IdentityRole() { Name = THDefaults.DoctorUnverified, ConcurrencyStamp = "3", NormalizedName = "DoctorUnvarified" },
+                    new IdentityRole() { Name = THDefaults.Patient, ConcurrencyStamp = "4", NormalizedName = "Patient" },
+                    new IdentityRole() { Name = THDefaults.PatientUnverified, ConcurrencyStamp = "5", NormalizedName = "PatientUnvarified" },
+                    new IdentityRole() { Name = THDefaults.Guest, ConcurrencyStamp = "6", NormalizedName = "Guest" }
                 );
             
         }

@@ -10,6 +10,7 @@ using TH.Configurations;
 using TH.Data;
 using TH.Mapper;
 using TH.Middlewares;
+using TH.Services;
 
 namespace TH.Extensions
 {
@@ -73,7 +74,8 @@ namespace TH.Extensions
 
         public static void AddApplicationServices(this IServiceCollection services, WebApplicationBuilder builder)
         {
-
+            builder.Services.AddScoped<ICustomerService, CustomerService>();
+            builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         }
 
         public static void AddMiddlewares(this WebApplication app)

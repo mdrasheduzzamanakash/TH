@@ -36,7 +36,7 @@ namespace TH.Services
             return await _dbSet.ToListAsync();
         }
 
-        public async Task<T?> GetByIdAsync(int id)
+        public async Task<T?> GetByIdAsync(string id)
         {
             return await _dbSet.FindAsync(id);
         }
@@ -56,7 +56,7 @@ namespace TH.Services
             }
         }
 
-        public async Task<T?> UpdateAsync(T entity, int id)
+        public async Task<T?> UpdateAsync(T entity, string id)
         {
             try
             {
@@ -76,7 +76,7 @@ namespace TH.Services
             }
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(string id)
         {
             var entity = await _dbSet.FindAsync(id);
             if (entity != null)
