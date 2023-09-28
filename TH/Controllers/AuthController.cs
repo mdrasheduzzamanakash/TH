@@ -434,6 +434,17 @@ namespace TH.Controllers
                             new Claim(ClaimTypes.Role, customer.OnRole == THDefaults.DoctorUnverified ? THDefaults.Doctor : THDefaults.Patient)
                         };
 
+                        #region HttpContext authentication 
+
+                        var identity = new ClaimsIdentity(authClaims, CookieAuthenticationDefaults.AuthenticationScheme);
+                        var principal = new ClaimsPrincipal(identity);
+                        var props = new AuthenticationProperties();
+                        HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, props).Wait();
+
+                        #endregion
+
+                        #region Application wise token 
+
                         var jwtToken = GetToken(authClaims);
                         var jwtTokenString = new JwtSecurityTokenHandler().WriteToken(jwtToken);
 
@@ -474,6 +485,10 @@ namespace TH.Controllers
                             Expires = DateTime.UtcNow.AddMonths(1)
                         };
                         Response.Cookies.Append(THDefaults.Refresh, refreshToken.Token, refreshTokenCookieOptions);
+
+
+                        #endregion
+
 
                         var model = new ConfirmEmailModel
                         {
@@ -742,8 +757,6 @@ namespace TH.Controllers
                         #endregion
 
                         #region Application wise token 
-
-
 
 
                         // get the customer 

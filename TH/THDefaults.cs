@@ -37,5 +37,8 @@ namespace TH
         // Redirection 
         public const string RedirectUrl = "";
 
+        // Cache types
+        public const string CacheTypeCustomer = "CacheTypeCustomer";
+
     }
 }

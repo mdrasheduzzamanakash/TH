@@ -1,18 +1,22 @@
-﻿namespace TH.Middlewares
+﻿using Microsoft.Extensions.Options;
+using TH.Configurations;
+
+namespace TH.Middlewares
 {
     public class RefreshTokenMiddleware
     {
         private readonly RequestDelegate _next;
-        public RefreshTokenMiddleware(RequestDelegate next)
+        private readonly JwtConfig _jwtConfig;
+        public RefreshTokenMiddleware(RequestDelegate next, 
+            IOptionsMonitor<JwtConfig> optionsMonitor)
         {
             _next = next;
+            _jwtConfig = optionsMonitor.CurrentValue;
         }
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Your custom token refresh logic goes here
-
-            // Call the next middleware in the pipeline
+            // TODO
             await _next(context);
         }
 

@@ -82,6 +82,7 @@ namespace TH.Extensions
             builder.Services.AddScoped<ICustomerService, CustomerService>();
             builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
             builder.Services.AddScoped<ILogService, LogService>();
+            builder.Services.AddScoped<IWorkContext, WorkContext>();
         }
 
         public static void AddThirdPartyServices(this IServiceCollection services, WebApplicationBuilder builder)
@@ -121,6 +122,8 @@ namespace TH.Extensions
             app.UseCheckForGuestMiddleware(); // Add guest role to new user
 
             app.UseRefreshTokenMiddleware();
+
+            app.UseWorkContextCreatorMiddleware();
 
             app.UseAuthentication();
 
