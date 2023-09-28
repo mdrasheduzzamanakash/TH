@@ -10,6 +10,8 @@
         public bool IsUsed { get; set; }
 
         public bool IsRevoked { get; set; }
+        
+        public bool IsExpired { get; set; }
 
         public DateTime ExpiryDate { get; set; }
 

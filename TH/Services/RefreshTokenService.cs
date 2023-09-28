@@ -14,7 +14,10 @@ namespace TH.Services
         public async Task<RefreshToken?> FindByIdentityIdAsync(string id)
         {
             if (id == null) throw new ArgumentNullException(nameof(id));
-            var token = await _dbSet.FirstOrDefaultAsync(u => u.IdentityId == id);
+            var token = await _dbSet.FirstOrDefaultAsync(u => u.IdentityId == id &&
+                                                            u.IsUsed == false && 
+                                                            u.IsExpired == false &&
+                                                            u.IsRevoked == false);
             return token;
         }
     }

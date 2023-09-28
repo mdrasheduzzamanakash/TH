@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Options;
@@ -6,6 +7,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Policy;
 using System.Text;
 using TH.Configurations;
 using TH.Domains;
@@ -32,9 +34,9 @@ namespace TH.Controllers
         public AuthController(UserManager<IdentityUser> userManager,
             RoleManager<IdentityRole> roleManager,
             IConfiguration configuration,
-            IOptionsMonitor<JwtConfig> optionMonitor, 
-            ICustomerService customerService, 
-            IRefreshTokenService refreshTokenService, 
+            IOptionsMonitor<JwtConfig> optionMonitor,
+            ICustomerService customerService,
+            IRefreshTokenService refreshTokenService,
             ILogService logService)
         {
             _logService = logService;
@@ -58,7 +60,7 @@ namespace TH.Controllers
                     audience: _jwtConfig.ValidAudience,
                     expires: DateTime.UtcNow.Add(_jwtConfig.ExpiryTimeFrame),
                     claims: authClaims,
-                    signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
+                    signingCredentials: new SigningCredentials(authSigningKey, THDefaults.jwtAlgo)
                 );
             return token;
         }
@@ -69,6 +71,13 @@ namespace TH.Controllers
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
             return new string(Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+
+        private DateTime UnixTimeStampToDate(long utcExpiryDate)
+        {
+            var dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+            dateTime = dateTime.AddSeconds(utcExpiryDate);
+            return dateTime;
         }
 
         #endregion
@@ -82,7 +91,7 @@ namespace TH.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(LoginModel model)
         {
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 ViewData["Error"] = "Problem logging in, try again later.";
                 return View(model);
@@ -127,10 +136,14 @@ namespace TH.Controllers
                         CustomerId = customer.Id,
                         IdentityId = user.Id,
                         IsUsed = false,
+                        IsExpired = false,
                         IsRevoked = false,
                         ExpiryDate = DateTime.UtcNow.AddDays(30),
                         JwtId = jti ?? ""
                     };
+
+                    // save the refresh token 
+                    var _ = await _refreshTokenService.InsertAsync(refreshToken);
 
                     // add cookies
                     var jwtTokenCookieOptions = new CookieOptions
@@ -170,12 +183,13 @@ namespace TH.Controllers
                 var _ = await _logService.InsertAsync(new Log
                 {
                     Message = ex.Message,
-                    Description = ex.ToString(), 
-                    Origin = ControllerContext.ActionDescriptor.ControllerName + "_" + ControllerContext.ActionDescriptor.ActionName, 
-                    Tag = THDefaults.Urgent, 
+                    Description = ex.ToString(),
+                    Origin = ControllerContext.ActionDescriptor.ControllerName + "_" + ControllerContext.ActionDescriptor.ActionName,
+                    Tag = THDefaults.Urgent,
                     Type = THDefaults.Error
                 });
             }
+            Response.Cookies.Append(THDefaults.OTMActive, THDefaults.Active);
             Response.Cookies.Append(THDefaults.OneTimeMessage, "Welcome Back! " + welcomeName);
             return RedirectToAction("Index", "Home");
         }
@@ -203,9 +217,9 @@ namespace TH.Controllers
         public async Task<IActionResult> Register(RegisterModel model, string role)
         {
             // Check model validation 
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                ViewData["Error"] = "Problem registering in, try again later.";
+                ViewData["Error"] = "Problem registering in, Please provide information accordingly";
                 return View(model);
             }
 
@@ -295,10 +309,11 @@ namespace TH.Controllers
                         IdentityId = user.Id,
                         IsUsed = false,
                         IsRevoked = false,
+                        IsExpired = false,
                         ExpiryDate = DateTime.UtcNow.AddDays(30),
                         JwtId = jti ?? ""
                     };
-
+                    
                     var _ = await _refreshTokenService.InsertAsync(refreshToken);
 
                     // set cookies 
@@ -316,6 +331,7 @@ namespace TH.Controllers
                     };
                     Response.Cookies.Append(THDefaults.Refresh, refreshToken.Token, refreshTokenCookieOptions);
 
+                    Response.Cookies.Append(THDefaults.OTMActive, THDefaults.Active);
                     Response.Cookies.Append(THDefaults.OneTimeMessage, "Welcome, " + welcomeName);
                     return RedirectToAction("Index", "Home");
                 }
@@ -359,7 +375,7 @@ namespace TH.Controllers
                         {
                             new Claim(ClaimTypes.Name, email),
                             new Claim(ClaimTypes.Email, email),
-                            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), 
+                            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                             new Claim(ClaimTypes.Role, customer.OnRole == THDefaults.DoctorUnverified ? THDefaults.Doctor : THDefaults.Patient)
                         };
 
@@ -382,6 +398,7 @@ namespace TH.Controllers
                             IdentityId = user.Id,
                             IsUsed = false,
                             IsRevoked = false,
+                            IsExpired = false,
                             ExpiryDate = DateTime.UtcNow.AddDays(30),
                             JwtId = jti ?? ""
                         };
@@ -437,7 +454,7 @@ namespace TH.Controllers
                     Message = "Unable to validate! Please register again."
                 };
                 return View(model);
-                
+
             }
 
         }
@@ -445,6 +462,310 @@ namespace TH.Controllers
         #endregion
 
         #region Reset Password / Refresh Token
+
+        public IActionResult ForgotPassword()
+        {
+            return View(new ForgotPasswordModel ());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordModel model)
+        {
+            if(ModelState.IsValid)
+            {
+                // generate password reset token 
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if(user != null)
+                {
+                    var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                    var forgotPasswordLink = Url.Action("ResetPassword", "Auth", new { token, email = user.Email }, Request.Scheme);
+
+                    // send the email
+
+                    Response.Cookies.Append(THDefaults.OTMActive, THDefaults.Active);
+                    Response.Cookies.Append(THDefaults.OneTimeMessage, "A mail is sent to the " + model.Email + " with the proper instructions.");
+                    return RedirectToAction("Login");
+                } 
+                else
+                {
+                    Response.Cookies.Append(THDefaults.OTMActive, THDefaults.Active);
+                    Response.Cookies.Append(THDefaults.OneTimeMessage, model.Email + " is not registered. Please register first.");
+                    return RedirectToAction("Register");
+                }
+            }
+            
+            return View(model);
+        }
+
+        [HttpGet("reset-password")]
+        public IActionResult ResetPassword(string token, string email)
+        {
+            var model = new ResetPasswordModel { Token = token, Email = email };
+            return View(model);
+        }
+
+
+        [HttpPost]
+        [AllowAnonymous]
+        [Route("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if(user != null)
+                {
+                    var resetPassResult = await _userManager.ResetPasswordAsync(user, model.Token, model.Password);
+
+                    if (!resetPassResult.Succeeded)
+                    {
+                        var errorMessages = string.Join("<br />", resetPassResult.Errors.Select(e => e.Description));
+                        ViewData["Error"] = errorMessages;
+                        return View(model);
+                    } 
+                    else
+                    {
+                        Response.Cookies.Append(THDefaults.OTMActive, THDefaults.Active);
+                        Response.Cookies.Append(THDefaults.OneTimeMessage, "Password reset successfull. Please login now.");
+                        return RedirectToAction("Login");
+                    }
+                } 
+                else
+                {
+                    return RedirectToAction("Login");
+                }
+            }
+            return View(model);
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> RefreshToken()
+        {
+            var jwt = Request.Cookies[THDefaults.Jwt];
+            var refresh = Request.Cookies[THDefaults.Refresh];
+            var redirectUrl = Request.Cookies[THDefaults.RedirectUrl];
+
+            if (jwt == null || refresh == null || redirectUrl == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            // verification of jwt token 
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_jwtConfig.Secret);
+            var tokenValidationParamerters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                RequireExpirationTime = true,
+                ValidateLifetime = false,
+                ClockSkew = TimeSpan.Zero
+            };
+
+            try
+            {
+                var principal = tokenHandler.ValidateToken(jwt, tokenValidationParamerters, out var validatedToken);
+
+                // check actual jwt token 
+                if(validatedToken is JwtSecurityToken jwtSecurityToken)
+                {
+                    var result = jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase);
+
+                    if (!result)
+                    {
+                        return RedirectToAction("Login");
+                    }
+                    var utcExpiryDate = long.Parse(principal.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Exp)?.Value ?? "");
+                    var expiryDate = UnixTimeStampToDate(utcExpiryDate);
+
+                    // check the exiry date of the jwt token 
+                    if (expiryDate < DateTime.UtcNow)
+                    {
+                        var email = principal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value ?? "";
+                        var user = await _userManager.FindByEmailAsync(email);
+
+                        if(user == null)
+                        {
+                            Response.Cookies.Delete(THDefaults.Jwt);
+                            Response.Cookies.Delete(THDefaults.Refresh);
+
+                            return RedirectToAction("Register");
+                        }
+
+                        // no refresh token available
+                        var refreshToken = await _refreshTokenService.FindByIdentityIdAsync(user.Id);
+                        if (refreshToken is null)
+                        {
+                            Response.Cookies.Delete(THDefaults.Jwt);
+                            Response.Cookies.Delete(THDefaults.Refresh);
+                            
+                            return RedirectToAction("Login");
+                        }
+                        
+                        // check the expiry date
+                        if (refreshToken.ExpiryDate < DateTime.UtcNow)
+                        {
+                            refreshToken.IsExpired = true;
+                            await _refreshTokenService.UpdateAsync(refreshToken, refreshToken.Id);
+
+                            Response.Cookies.Delete(THDefaults.Jwt);
+                            Response.Cookies.Delete(THDefaults.Refresh);
+
+                            return RedirectToAction("Login");
+                        }
+
+                        // check if the refresh token is used or not 
+                        if (refreshToken.IsUsed)
+                        {
+                            Response.Cookies.Delete(THDefaults.Jwt);
+                            Response.Cookies.Delete(THDefaults.Refresh);
+
+                            return RedirectToAction("Login");
+                        }
+
+                        // check if the refresh token is revoked or not 
+                        if (refreshToken.IsRevoked)
+                        {
+                            Response.Cookies.Delete(THDefaults.Jwt);
+                            Response.Cookies.Delete(THDefaults.Refresh);
+
+                            return RedirectToAction("Login");
+                        }
+
+                        // match the jwt refrence
+                        var jti = principal.Claims.SingleOrDefault(x => x.Type == JwtRegisteredClaimNames.Jti)?.Value ?? "";
+                        if (refreshToken.JwtId != jti)
+                        {
+                            refreshToken.IsRevoked = true;
+                            await _refreshTokenService.UpdateAsync(refreshToken, refreshToken.Id);
+
+                            Response.Cookies.Delete(THDefaults.Jwt);
+                            Response.Cookies.Delete(THDefaults.Refresh);
+
+                            return RedirectToAction("Login");
+                        }
+
+                        // the process come this far 
+                        // create new refresh token and jwt token 
+                        refreshToken.IsUsed = true;
+                        await _refreshTokenService.UpdateAsync(refreshToken, refreshToken.Id);
+
+                        var authClaims = new List<Claim>
+                        {
+                            new Claim(ClaimTypes.Name, user?.Email ?? ""),
+                            new Claim(ClaimTypes.Email, user?.Email ?? ""),
+                            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                        };
+
+                        var userRoles = await _userManager.GetRolesAsync(user);
+                        foreach (var role in userRoles)
+                        {
+                            authClaims.Add(new Claim(ClaimTypes.Role, role));
+                        }
+
+                        // get the customer 
+                        var customer = await _customerService.FindByEmailAsync(user.Email);
+
+                        // create a token as current role
+                        var jwtToken = GetToken(authClaims);
+                        var token = new JwtSecurityTokenHandler().WriteToken(jwtToken);
+
+                        // create referesh token 
+                        var newJti = jwtToken.Claims.Where(claim => claim.Type == JwtRegisteredClaimNames.Jti).FirstOrDefault()?.Value;
+                        var newRefreshToken = new RefreshToken
+                        {
+                            Token = $"{RandomStringGenerator(50)}_{Guid.NewGuid()}",
+                            CustomerId = customer?.Id ?? "",
+                            IdentityId = user.Id,
+                            IsUsed = false,
+                            IsExpired = false,
+                            IsRevoked = false,
+                            ExpiryDate = DateTime.UtcNow.AddDays(30),
+                            JwtId = newJti ?? ""
+                        };
+
+                        // save the refresh token 
+                        var _ = await _refreshTokenService.InsertAsync(newRefreshToken);
+
+                        // add cookies
+                        var jwtTokenCookieOptions = new CookieOptions
+                        {
+                            HttpOnly = false,
+                            Expires = DateTime.UtcNow.AddMonths(1),
+                        };
+                        Response.Cookies.Append(THDefaults.Jwt, token, jwtTokenCookieOptions);
+
+                        var refreshTokenCookieOptions = new CookieOptions
+                        {
+                            HttpOnly = true,
+                            Expires = DateTime.UtcNow.AddMonths(1)
+                        };
+                        Response.Cookies.Append(THDefaults.Refresh, refreshToken.Token, refreshTokenCookieOptions);
+
+                        // redirect to where it came from 
+                        var defaultUrl = Url.Action("Index", "Home") ?? "";
+                        return Redirect(Request.Cookies[THDefaults.RedirectUrl] ?? defaultUrl);
+                    }
+                    else
+                    {
+                        var email = principal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value ?? "";
+                        var user = await _userManager.FindByEmailAsync(email);
+
+                        if (user == null)
+                        {
+                            Response.Cookies.Delete(THDefaults.Jwt);
+                            Response.Cookies.Delete(THDefaults.Refresh);
+
+                            return RedirectToAction("Register");
+                        }
+
+                        // no refresh token available
+                        var refreshToken = await _refreshTokenService.FindByIdentityIdAsync(user.Id);
+                        if (refreshToken is null)
+                        {
+                            Response.Cookies.Delete(THDefaults.Jwt);
+                            Response.Cookies.Delete(THDefaults.Refresh);
+
+                            return RedirectToAction("Login");
+                        }
+
+                        refreshToken.IsRevoked = true;
+                        await _refreshTokenService.UpdateAsync(refreshToken, refreshToken.Id);
+
+                        Response.Cookies.Delete(THDefaults.Jwt);
+                        Response.Cookies.Delete(THDefaults.Refresh);
+
+                        return RedirectToAction("Login");
+                    }
+                } 
+                else
+                {
+                    Response.Cookies.Delete(THDefaults.Jwt);
+                    Response.Cookies.Delete(THDefaults.Refresh);
+
+                    return RedirectToAction("Login");
+                }
+            }
+            catch (Exception ex)
+            {
+                var _ = await _logService.InsertAsync(new Log
+                {
+                    Message = ex.Message,
+                    Description = ex.ToString(),
+                    Origin = ControllerContext.ActionDescriptor.ControllerName + "_" + ControllerContext.ActionDescriptor.ActionName,
+                    Tag = THDefaults.Urgent,
+                    Type = THDefaults.Error
+                });
+
+                Response.Cookies.Delete(THDefaults.Jwt);
+                Response.Cookies.Delete(THDefaults.Refresh);
+
+                return RedirectToAction("Login");
+            }
+        }
 
         #endregion
     }

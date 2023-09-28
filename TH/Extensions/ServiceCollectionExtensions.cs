@@ -41,7 +41,7 @@ namespace TH.Extensions
                 options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
             }).AddCookie(options =>
             {
-                options.Cookie.Name = "jwt";
+                options.Cookie.Name = THDefaults.Jwt;
                 options.LoginPath = "/Auth/Login";
                 options.LogoutPath = "/Auth/Logout";
             });
@@ -76,6 +76,7 @@ namespace TH.Extensions
         {
             builder.Services.AddScoped<ICustomerService, CustomerService>();
             builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+            builder.Services.AddScoped<ILogService, LogService>();
         }
 
         public static void AddMiddlewares(this WebApplication app)
@@ -102,6 +103,8 @@ namespace TH.Extensions
             app.UseStaticFiles();
 
             app.UseRouting();
+
+            app.UseCheckForGuestMiddleware();
 
             app.UseRefreshTokenMiddleware();
 
