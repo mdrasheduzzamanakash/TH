@@ -6,7 +6,7 @@ namespace TH.Services
 {
     public class LogService : GenericService<Log>, ILogService, IGenericService<Log>
     {
-        public LogService(AppDbContext context, ILogger logger, IMapper mapper) : base(context, logger, mapper)
+        public LogService(AppDbContext context, IMapper mapper) : base(context, mapper)
         {
         }
     }

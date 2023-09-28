@@ -1,4 +1,12 @@
-﻿namespace TH.Middlewares
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using TH.Configurations;
+
+namespace TH.Middlewares
 {
     public class CheckForGuestMiddleware
     {
@@ -10,11 +18,26 @@
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Your custom token refresh logic goes here
+            var jwt = context.Request.Cookies[THDefaults.Jwt];
+            var refresh = context.Request.Cookies[THDefaults.Refresh];
 
+            if(jwt == null)
+            {
+                // assuming visitor as guest
+                var authClaims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Role, THDefaults.Guest)
+                };
+
+                var identity = new ClaimsIdentity(authClaims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var principal = new ClaimsPrincipal(identity);
+                var props = new AuthenticationProperties();
+                context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, props).Wait();
+            } 
             // Call the next middleware in the pipeline
             await _next(context);
         }
+
     }
 
     public static class CheckForGuestMiddlewareExtension

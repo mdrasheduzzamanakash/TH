@@ -27,7 +27,6 @@
     <Folder Include="Areas\Admin\Data\" />
     <Folder Include="Areas\Admin\Models\" />
     <Folder Include="Factories\" />
-    <Folder Include="Attributes\" />
     <Folder Include="Validations\" />
   </ItemGroup>
 

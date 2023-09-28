@@ -11,6 +11,7 @@ using TH.Data;
 using TH.Mapper;
 using TH.Middlewares;
 using TH.Services;
+using TH.Services.ThirdPartyServices;
 
 namespace TH.Extensions
 {
@@ -22,6 +23,7 @@ namespace TH.Extensions
         {
             // For JWT
             builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection("JwtConfig"));
+            
             
             // For Entity Framework
             builder.Services.AddDbContext<AppDbContext>(options =>
@@ -41,9 +43,9 @@ namespace TH.Extensions
                 options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
             }).AddCookie(options =>
             {
-                options.Cookie.Name = THDefaults.Jwt;
+                options.Cookie.Name = THDefaults.AspToken;
                 options.LoginPath = "/Auth/Login";
-                options.LogoutPath = "/Auth/Logout";
+                options.LogoutPath = "/Auth/Logout"; 
             });
 
 
@@ -65,6 +67,9 @@ namespace TH.Extensions
 
             // Add services  
             services.AddApplicationServices(builder);
+
+            // Add third party services 
+            services.AddThirdPartyServices(builder);
         }
 
         public static void AddHttpContextAccessor(this IServiceCollection services)
@@ -77,6 +82,15 @@ namespace TH.Extensions
             builder.Services.AddScoped<ICustomerService, CustomerService>();
             builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
             builder.Services.AddScoped<ILogService, LogService>();
+        }
+
+        public static void AddThirdPartyServices(this IServiceCollection services, WebApplicationBuilder builder)
+        {
+            // For SMTP2GO
+            builder.Services.Configure<Smtp2GoConfig>(builder.Configuration.GetSection("Smtp2GoConfig"));
+
+            // Add email smtp2go service
+            builder.Services.AddScoped<IEmailService, EmailSmtp2GoService>();
         }
 
         public static void AddMiddlewares(this WebApplication app)
@@ -104,13 +118,15 @@ namespace TH.Extensions
 
             app.UseRouting();
 
-            app.UseCheckForGuestMiddleware();
+            app.UseCheckForGuestMiddleware(); // Add guest role to new user
 
             app.UseRefreshTokenMiddleware();
 
             app.UseAuthentication();
 
             app.UseAuthorization();
+
+            app.UseCookiePolicy();
         }
     }
 }

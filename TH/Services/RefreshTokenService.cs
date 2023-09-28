@@ -7,7 +7,7 @@ namespace TH.Services
 {
     public class RefreshTokenService : GenericService<RefreshToken>, IRefreshTokenService, IGenericService<RefreshToken>
     {
-        public RefreshTokenService(AppDbContext context, ILogger logger, IMapper mapper) : base(context, logger, mapper)
+        public RefreshTokenService(AppDbContext context, IMapper mapper) : base(context, mapper)
         {
         }
 

@@ -51,42 +51,42 @@ namespace TH.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "6aa6fca6-8898-43c7-945a-019039353b50",
+                            Id = "00a98a96-00b9-4502-bfe6-49a31868049c",
                             ConcurrencyStamp = "1",
                             Name = "Admin",
                             NormalizedName = "Admin"
                         },
                         new
                         {
-                            Id = "5828c9aa-d2cd-4734-b087-39114bcd89e6",
+                            Id = "7d2420da-c9bb-4732-8b54-cb5ff256d783",
                             ConcurrencyStamp = "2",
                             Name = "Doctor",
                             NormalizedName = "Doctor"
                         },
                         new
                         {
-                            Id = "e5b2ac6e-332b-4f5c-ab30-8a658deb95bc",
+                            Id = "1ee1bbf4-be60-4a44-87ac-f38644e42eca",
                             ConcurrencyStamp = "3",
-                            Name = "DoctorUnverified",
-                            NormalizedName = "DoctorUnvarified"
-                        },
-                        new
-                        {
-                            Id = "bdf75c28-a8ac-498d-a2d4-d1044b7fad4a",
-                            ConcurrencyStamp = "4",
                             Name = "Patient",
                             NormalizedName = "Patient"
                         },
                         new
                         {
-                            Id = "6c051ad1-5394-4e0d-92bc-63a030a233b3",
-                            ConcurrencyStamp = "5",
-                            Name = "PatientUnverified",
-                            NormalizedName = "PatientUnvarified"
+                            Id = "7c03d599-8f46-4efc-9088-3e8d4330c80e",
+                            ConcurrencyStamp = "4",
+                            Name = "DoctorUnverified",
+                            NormalizedName = "DoctorUnverified"
                         },
                         new
                         {
-                            Id = "4c102a4b-6b2a-4b32-b697-1a5479ce1c29",
+                            Id = "610f985c-8065-4704-b91d-457f05460caa",
+                            ConcurrencyStamp = "5",
+                            Name = "PatientUnverified",
+                            NormalizedName = "PatientUnverified"
+                        },
+                        new
+                        {
+                            Id = "b15bbcef-cf62-45a2-98e6-3cf2450ec39d",
                             ConcurrencyStamp = "6",
                             Name = "Guest",
                             NormalizedName = "Guest"
@@ -266,14 +266,16 @@ namespace TH.Migrations
 
             modelBuilder.Entity("TH.Domains.Customer", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<string>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -299,16 +301,55 @@ namespace TH.Migrations
                     b.ToTable("Customers");
                 });
 
-            modelBuilder.Entity("TH.Domains.RefreshToken", b =>
+            modelBuilder.Entity("TH.Domains.Log", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<string>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Origin")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Tag")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Logs");
+                });
+
+            modelBuilder.Entity("TH.Domains.RefreshToken", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("ExpiryDate")
                         .HasColumnType("datetime2");
@@ -316,6 +357,9 @@ namespace TH.Migrations
                     b.Property<string>("IdentityId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsExpired")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsRevoked")
                         .HasColumnType("bit");
@@ -336,10 +380,6 @@ namespace TH.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

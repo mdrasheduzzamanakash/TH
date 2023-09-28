@@ -38,7 +38,7 @@
     </div>
 
     <!-- Add a hidden input field for the "role" parameter -->
-    <input id="roleInput" name="role" type="hidden" value="patient" />
+    <input id="roleInput" name="role" type="hidden" value="" />
 
     <input id="submitButton" type="submit" value="Submit" class="btn btn-outline-primary" />
 </form>
@@ -49,8 +49,9 @@
             // Attach an event handler to the checkbox change event
             $("#doctorCheckbox").change(function () {
                 var isChecked = $(this).is(":checked");
-                var roleValue = isChecked ? @THDefaults.Doctor : @THDefaults.Patient;
+                var roleValue = isChecked ? "@THDefaults.DoctorUnverified" : "@THDefaults.PatientUnverified";
 
+                console.log('hi')
                 // Set the 'role' input field value
                 $("#roleInput").val(roleValue);
             });

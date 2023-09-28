@@ -9,7 +9,6 @@ namespace TH.Services
         #region Fields
 
         protected readonly AppDbContext _context;
-        protected readonly ILogger _logger;
         protected readonly IMapper _mapper;
         protected readonly DbSet<T> _dbSet;
 
@@ -17,12 +16,10 @@ namespace TH.Services
 
         #region Ctor
 
-        public GenericService(AppDbContext context,  
-            ILogger logger, 
+        public GenericService(AppDbContext context,   
             IMapper mapper)
         {
             _context = context;
-            _logger = logger;
             _mapper = mapper;
             _dbSet = context.Set<T>();
         }

@@ -4,6 +4,7 @@ namespace TH
 {
     public static class THDefaults
     {
+        public const string AppName = "TH";
         public const string Active = "true";
         public const string Deactive = "false";
         // Roles 
@@ -25,11 +26,16 @@ namespace TH
         // Token 
         public const string jwtAlgo = SecurityAlgorithms.HmacSha256;
         public const string Jwt = "jwt";
+        public const string AspToken = "AspToken";
         public const string Refresh = "refresh";
         public const string OneTimeMessage = "OTM";
-        public const string OTMActive = "false";
+        public const string OTMActive = "OtmActive";
+
+        // Data layer
+        public const string CookieDatalayerUserRole = "role";
 
         // Redirection 
         public const string RedirectUrl = "";
+
     }
 }

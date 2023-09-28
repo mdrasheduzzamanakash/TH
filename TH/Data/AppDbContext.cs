@@ -31,12 +31,12 @@ namespace TH.Data
         {
             builder.Entity<IdentityRole>().HasData
                 (
-                    new IdentityRole() { Name = THDefaults.Admin, ConcurrencyStamp = "1", NormalizedName = "Admin"},
-                    new IdentityRole() { Name = THDefaults.Doctor, ConcurrencyStamp = "2", NormalizedName = "Doctor" },
-                    new IdentityRole() { Name = THDefaults.DoctorUnverified, ConcurrencyStamp = "3", NormalizedName = "DoctorUnvarified" },
-                    new IdentityRole() { Name = THDefaults.Patient, ConcurrencyStamp = "4", NormalizedName = "Patient" },
-                    new IdentityRole() { Name = THDefaults.PatientUnverified, ConcurrencyStamp = "5", NormalizedName = "PatientUnvarified" },
-                    new IdentityRole() { Name = THDefaults.Guest, ConcurrencyStamp = "6", NormalizedName = "Guest" }
+                    new IdentityRole() { Name = THDefaults.Admin, ConcurrencyStamp = "1", NormalizedName = THDefaults.Admin},
+                    new IdentityRole() { Name = THDefaults.Doctor, ConcurrencyStamp = "2", NormalizedName = THDefaults.Doctor },
+                    new IdentityRole() { Name = THDefaults.Patient, ConcurrencyStamp = "3", NormalizedName = THDefaults.Patient },
+                    new IdentityRole() { Name = THDefaults.DoctorUnverified, ConcurrencyStamp = "4", NormalizedName = THDefaults.DoctorUnverified },
+                    new IdentityRole() { Name = THDefaults.PatientUnverified, ConcurrencyStamp = "5", NormalizedName = THDefaults.PatientUnverified },
+                    new IdentityRole() { Name = THDefaults.Guest, ConcurrencyStamp = "6", NormalizedName = THDefaults.Guest }
                 );
             
         }

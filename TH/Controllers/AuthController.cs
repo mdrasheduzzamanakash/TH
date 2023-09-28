@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
@@ -13,11 +15,18 @@ using TH.Configurations;
 using TH.Domains;
 using TH.Models;
 using TH.Services;
+using TH.Services.ThirdPartyServices;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using JwtRegisteredClaimNames = System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames;
 
 namespace TH.Controllers
 {
+    [Authorize(Roles =
+        THDefaults.Doctor + "," +
+        THDefaults.Patient + "," +
+        THDefaults.DoctorUnverified + "," +
+        THDefaults.PatientUnverified + "," +
+        THDefaults.Guest)]
     public class AuthController : Controller
     {
         #region Fields
@@ -28,6 +37,7 @@ namespace TH.Controllers
         private readonly JwtConfig _jwtConfig;
         private readonly IRefreshTokenService _refreshTokenService;
         private readonly ILogService _logService;
+        private readonly IEmailService _emailService;
         #endregion
 
         #region Ctor
@@ -37,8 +47,10 @@ namespace TH.Controllers
             IOptionsMonitor<JwtConfig> optionMonitor,
             ICustomerService customerService,
             IRefreshTokenService refreshTokenService,
-            ILogService logService)
+            ILogService logService, 
+            IEmailService emailService)
         {
+            _emailService = emailService;
             _logService = logService;
             _refreshTokenService = refreshTokenService;
             _customerService = customerService;
@@ -122,10 +134,12 @@ namespace TH.Controllers
                         authClaims.Add(new Claim(ClaimTypes.Role, role));
                     }
 
+                    #region Application wise token 
+
+
                     // create a token as current role
                     var jwtToken = GetToken(authClaims);
                     var token = new JwtSecurityTokenHandler().WriteToken(jwtToken);
-
 
 
                     // create referesh token 
@@ -159,6 +173,18 @@ namespace TH.Controllers
                         Expires = DateTime.UtcNow.AddMonths(1)
                     };
                     Response.Cookies.Append(THDefaults.Refresh, refreshToken.Token, refreshTokenCookieOptions);
+
+                    #endregion
+
+
+                    #region HttpContext authentication 
+
+                    var identity = new ClaimsIdentity(authClaims, CookieAuthenticationDefaults.AuthenticationScheme);
+                    var principal = new ClaimsPrincipal(identity);
+                    var props = new AuthenticationProperties();
+                    HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, props).Wait();
+
+                    #endregion
 
                     // set global values 
                     welcomeName = customer.FirstName + " " + customer.LastName;
@@ -194,12 +220,14 @@ namespace TH.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
             // TODO : clear the cookies 
             Response.Cookies.Delete(THDefaults.OneTimeMessage);
             Response.Cookies.Delete(THDefaults.Jwt);
             Response.Cookies.Delete(THDefaults.Refresh);
+
+            await HttpContext.SignOutAsync();
 
             return RedirectToAction("Index", "Home");
         }
@@ -274,14 +302,15 @@ namespace TH.Controllers
                     await _userManager.AddToRoleAsync(user, role);
 
                     // Add token to verify the email 
+                    var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}";
                     var emailToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                    var confirmationLink = Url.Action(nameof(ConfirmEmail), "Authentication", new { emailToken, email = user.Email });
+                    var confirmationLink = Url.Action(nameof(ConfirmEmail), "Authentication", new { emailToken, email = user.Email }, protocol: HttpContext.Request.Scheme, host: HttpContext.Request.Host.ToString());
 
-                    // TODO : create a email service 
-                    // Create an email and send it 
-                    // assign token with email not confirmed 
-
-
+                    // send the email 
+                    await _emailService.SendAccountVerificationMailAsync(user.Email, confirmationLink ?? "", new Dictionary<string, string>
+                    {
+                        ["Name"] = customer.FirstName
+                    });
 
                     // create jwt token 
                     var authClaims = new List<Claim>
@@ -296,6 +325,8 @@ namespace TH.Controllers
                     {
                         authClaims.Add(new Claim(ClaimTypes.Role, eachrole));
                     }
+
+                    #region Application wise token
 
                     var jwtToken = GetToken(authClaims);
                     var token = new JwtSecurityTokenHandler().WriteToken(jwtToken);
@@ -313,7 +344,7 @@ namespace TH.Controllers
                         ExpiryDate = DateTime.UtcNow.AddDays(30),
                         JwtId = jti ?? ""
                     };
-                    
+
                     var _ = await _refreshTokenService.InsertAsync(refreshToken);
 
                     // set cookies 
@@ -331,8 +362,20 @@ namespace TH.Controllers
                     };
                     Response.Cookies.Append(THDefaults.Refresh, refreshToken.Token, refreshTokenCookieOptions);
 
+
+                    #endregion
+
+                    #region HttpContext authentication 
+
+                    var identity = new ClaimsIdentity(authClaims, CookieAuthenticationDefaults.AuthenticationScheme);
+                    var principal = new ClaimsPrincipal(identity);
+                    var props = new AuthenticationProperties();
+                    HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, props).Wait();
+
+                    #endregion
+
                     Response.Cookies.Append(THDefaults.OTMActive, THDefaults.Active);
-                    Response.Cookies.Append(THDefaults.OneTimeMessage, "Welcome, " + welcomeName);
+                    Response.Cookies.Append(THDefaults.OneTimeMessage, "Welcome, " + welcomeName + "! A confirmation link is sent to the mail. Please verify your email.");
                     return RedirectToAction("Index", "Home");
                 }
                 else
@@ -358,18 +401,30 @@ namespace TH.Controllers
             }
         }
 
-        [HttpGet("ConfirmEmail")]
-        public async Task<IActionResult> ConfirmEmail(string token, string email)
+        [HttpGet]
+        [Route("Authentication/ConfirmEmail")]
+        public async Task<IActionResult> ConfirmEmail(string emailToken, string email)
         {
             var user = await _userManager.FindByEmailAsync(email);
             if (user != null)
             {
-                var result = await _userManager.ConfirmEmailAsync(user, token);
+                var result = await _userManager.ConfirmEmailAsync(user, emailToken);
                 if (result.Succeeded)
                 {
                     var customer = await _customerService.FindByEmailAsync(email);
+                    
                     if (customer != null)
                     {
+                        // remove the previous unvarified role 
+                        await _userManager.RemoveFromRoleAsync(user, customer.OnRole);
+
+                        // update the customer 
+                        customer.OnRole = customer.OnRole == THDefaults.DoctorUnverified ? THDefaults.Doctor : THDefaults.Patient;
+                        await _customerService.UpdateAsync(customer, customer.Id);
+
+                        // Update role of the identity user 
+                        await _userManager.AddToRoleAsync(user, customer.OnRole);
+
                         // create jwt token 
                         var authClaims = new List<Claim>
                         {
@@ -411,7 +466,7 @@ namespace TH.Controllers
                             HttpOnly = false,
                             Expires = DateTime.UtcNow.AddMonths(1),
                         };
-                        Response.Cookies.Append(THDefaults.Jwt, token, jwtTokenCookieOptions);
+                        Response.Cookies.Append(THDefaults.Jwt, emailToken, jwtTokenCookieOptions);
 
                         var refreshTokenCookieOptions = new CookieOptions
                         {
@@ -478,9 +533,9 @@ namespace TH.Controllers
                 if(user != null)
                 {
                     var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                    var forgotPasswordLink = Url.Action("ResetPassword", "Auth", new { token, email = user.Email }, Request.Scheme);
+                    var forgotPasswordLink = Url.Action("ResetPassword", "Auth", new { token, email = user.Email }, protocol: HttpContext.Request.Scheme, host: HttpContext.Request.Host.ToString());
 
-                    // send the email
+                    // TODO : send the email
 
                     Response.Cookies.Append(THDefaults.OTMActive, THDefaults.Active);
                     Response.Cookies.Append(THDefaults.OneTimeMessage, "A mail is sent to the " + model.Email + " with the proper instructions.");
@@ -503,7 +558,6 @@ namespace TH.Controllers
             var model = new ResetPasswordModel { Token = token, Email = email };
             return View(model);
         }
-
 
         [HttpPost]
         [AllowAnonymous]
@@ -537,7 +591,6 @@ namespace TH.Controllers
             }
             return View(model);
         }
-
 
         [HttpGet]
         public async Task<IActionResult> RefreshToken()
@@ -592,6 +645,8 @@ namespace TH.Controllers
                             Response.Cookies.Delete(THDefaults.Jwt);
                             Response.Cookies.Delete(THDefaults.Refresh);
 
+                            await HttpContext.SignOutAsync();
+
                             return RedirectToAction("Register");
                         }
 
@@ -601,7 +656,9 @@ namespace TH.Controllers
                         {
                             Response.Cookies.Delete(THDefaults.Jwt);
                             Response.Cookies.Delete(THDefaults.Refresh);
-                            
+
+                            await HttpContext.SignOutAsync();
+
                             return RedirectToAction("Login");
                         }
                         
@@ -614,6 +671,8 @@ namespace TH.Controllers
                             Response.Cookies.Delete(THDefaults.Jwt);
                             Response.Cookies.Delete(THDefaults.Refresh);
 
+                            await HttpContext.SignOutAsync();
+
                             return RedirectToAction("Login");
                         }
 
@@ -623,6 +682,8 @@ namespace TH.Controllers
                             Response.Cookies.Delete(THDefaults.Jwt);
                             Response.Cookies.Delete(THDefaults.Refresh);
 
+                            await HttpContext.SignOutAsync();
+
                             return RedirectToAction("Login");
                         }
 
@@ -631,6 +692,8 @@ namespace TH.Controllers
                         {
                             Response.Cookies.Delete(THDefaults.Jwt);
                             Response.Cookies.Delete(THDefaults.Refresh);
+
+                            await HttpContext.SignOutAsync();
 
                             return RedirectToAction("Login");
                         }
@@ -644,6 +707,8 @@ namespace TH.Controllers
 
                             Response.Cookies.Delete(THDefaults.Jwt);
                             Response.Cookies.Delete(THDefaults.Refresh);
+
+                            await HttpContext.SignOutAsync();
 
                             return RedirectToAction("Login");
                         }
@@ -665,6 +730,21 @@ namespace TH.Controllers
                         {
                             authClaims.Add(new Claim(ClaimTypes.Role, role));
                         }
+
+
+                        #region HttpContext authentication 
+
+                        var identity = new ClaimsIdentity(authClaims, CookieAuthenticationDefaults.AuthenticationScheme);
+                        var principal_ctx = new ClaimsPrincipal(identity);
+                        var props = new AuthenticationProperties();
+                        HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal_ctx, props).Wait();
+
+                        #endregion
+
+                        #region Application wise token 
+
+
+
 
                         // get the customer 
                         var customer = await _customerService.FindByEmailAsync(user.Email);
@@ -705,8 +785,12 @@ namespace TH.Controllers
                         };
                         Response.Cookies.Append(THDefaults.Refresh, refreshToken.Token, refreshTokenCookieOptions);
 
+
+                        #endregion
+
+
                         // redirect to where it came from 
-                        var defaultUrl = Url.Action("Index", "Home") ?? "";
+                        var defaultUrl = Url.Action("Index", "Home", new { }, protocol: HttpContext.Request.Scheme, host: HttpContext.Request.Host.ToString()) ?? "";
                         return Redirect(Request.Cookies[THDefaults.RedirectUrl] ?? defaultUrl);
                     }
                     else
@@ -719,6 +803,8 @@ namespace TH.Controllers
                             Response.Cookies.Delete(THDefaults.Jwt);
                             Response.Cookies.Delete(THDefaults.Refresh);
 
+                            await HttpContext.SignOutAsync();
+
                             return RedirectToAction("Register");
                         }
 
@@ -729,6 +815,8 @@ namespace TH.Controllers
                             Response.Cookies.Delete(THDefaults.Jwt);
                             Response.Cookies.Delete(THDefaults.Refresh);
 
+                            await HttpContext.SignOutAsync();
+
                             return RedirectToAction("Login");
                         }
 
@@ -738,6 +826,8 @@ namespace TH.Controllers
                         Response.Cookies.Delete(THDefaults.Jwt);
                         Response.Cookies.Delete(THDefaults.Refresh);
 
+                        await HttpContext.SignOutAsync();
+
                         return RedirectToAction("Login");
                     }
                 } 
@@ -745,6 +835,8 @@ namespace TH.Controllers
                 {
                     Response.Cookies.Delete(THDefaults.Jwt);
                     Response.Cookies.Delete(THDefaults.Refresh);
+
+                    await HttpContext.SignOutAsync();
 
                     return RedirectToAction("Login");
                 }
@@ -762,6 +854,8 @@ namespace TH.Controllers
 
                 Response.Cookies.Delete(THDefaults.Jwt);
                 Response.Cookies.Delete(THDefaults.Refresh);
+
+                await HttpContext.SignOutAsync();
 
                 return RedirectToAction("Login");
             }

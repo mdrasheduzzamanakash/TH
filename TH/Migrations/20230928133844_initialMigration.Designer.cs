@@ -12,8 +12,8 @@ using TH.Data;
 namespace TH.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20230924091232_RoleUpdated")]
-    partial class RoleUpdated
+    [Migration("20230928133844_initialMigration")]
+    partial class initialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -54,42 +54,42 @@ namespace TH.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "dbd34ae6-df5c-45d0-ac2d-2e2b4bc75a63",
+                            Id = "00a98a96-00b9-4502-bfe6-49a31868049c",
                             ConcurrencyStamp = "1",
                             Name = "Admin",
                             NormalizedName = "Admin"
                         },
                         new
                         {
-                            Id = "582e6b8c-59fa-41a5-92b9-9f526f3d8f05",
+                            Id = "7d2420da-c9bb-4732-8b54-cb5ff256d783",
                             ConcurrencyStamp = "2",
-                            Name = "Registered",
-                            NormalizedName = "Registered"
-                        },
-                        new
-                        {
-                            Id = "5530120e-3c49-45f8-80c1-c1e65d7072a2",
-                            ConcurrencyStamp = "3",
                             Name = "Doctor",
                             NormalizedName = "Doctor"
                         },
                         new
                         {
-                            Id = "74019e6e-dd6a-45a0-a58a-3c183f200ac5",
-                            ConcurrencyStamp = "4",
-                            Name = "DoctorUnvarified",
-                            NormalizedName = "DoctorUnvarified"
-                        },
-                        new
-                        {
-                            Id = "b9d2ce12-c047-4ed5-b800-23f6c7e60b33",
-                            ConcurrencyStamp = "5",
+                            Id = "1ee1bbf4-be60-4a44-87ac-f38644e42eca",
+                            ConcurrencyStamp = "3",
                             Name = "Patient",
                             NormalizedName = "Patient"
                         },
                         new
                         {
-                            Id = "e8c274e8-5a3b-4f19-a009-6fa0f0d381d8",
+                            Id = "7c03d599-8f46-4efc-9088-3e8d4330c80e",
+                            ConcurrencyStamp = "4",
+                            Name = "DoctorUnverified",
+                            NormalizedName = "DoctorUnverified"
+                        },
+                        new
+                        {
+                            Id = "610f985c-8065-4704-b91d-457f05460caa",
+                            ConcurrencyStamp = "5",
+                            Name = "PatientUnverified",
+                            NormalizedName = "PatientUnverified"
+                        },
+                        new
+                        {
+                            Id = "b15bbcef-cf62-45a2-98e6-3cf2450ec39d",
                             ConcurrencyStamp = "6",
                             Name = "Guest",
                             NormalizedName = "Guest"
@@ -267,16 +267,18 @@ namespace TH.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("TH.Domains.Customers", b =>
+            modelBuilder.Entity("TH.Domains.Customer", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<string>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -302,16 +304,55 @@ namespace TH.Migrations
                     b.ToTable("Customers");
                 });
 
-            modelBuilder.Entity("TH.Domains.RefreshToken", b =>
+            modelBuilder.Entity("TH.Domains.Log", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<string>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Origin")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Tag")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Logs");
+                });
+
+            modelBuilder.Entity("TH.Domains.RefreshToken", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("ExpiryDate")
                         .HasColumnType("datetime2");
@@ -319,6 +360,9 @@ namespace TH.Migrations
                     b.Property<string>("IdentityId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsExpired")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsRevoked")
                         .HasColumnType("bit");
@@ -339,10 +383,6 @@ namespace TH.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
