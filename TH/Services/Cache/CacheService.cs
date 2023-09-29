@@ -13,7 +13,7 @@ namespace TH.Services.Cache
 
         public void Clear()
         {
-            throw new NotImplementedException();
+            _cache.Dispose();
         }
 
         public bool ContainsKey(CacheKey key)
@@ -28,22 +28,57 @@ namespace TH.Services.Cache
 
         public object Get(CacheKey key)
         {
-            throw new NotImplementedException();
+            return _cache.Get(key.Key()) ?? new object();
         }
 
-        public void GetOrSet(CacheKey key, Func<object> valueFactory, TimeSpan cacheDuration)
+        public object GetOrSet(CacheKey key, Func<object> valueFactory, TimeSpan cacheDuration)
         {
-            throw new NotImplementedException();
+            if (_cache.TryGetValue(key.Key(), out var cachedValue))
+            {
+                return cachedValue ?? new object();
+            }
+
+            // Value not found in cache, generate and cache it
+            var newValue = valueFactory();
+
+            var cacheEntryOptions = new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = cacheDuration,
+            };
+
+            _cache.Set(key.Key(), newValue, cacheEntryOptions);
+
+            return newValue;
         }
 
-        public void GetOrSet(CacheKey key, Func<object> valueFactory, TimeSpan cacheDuration, params object[] parameters)
+        object ICacheService.GetOrSet(CacheKey key, Func<object, object[]> valueFactory, TimeSpan cacheDuration, params object[] parameters)
         {
-            throw new NotImplementedException();
+            if (_cache.TryGetValue(key.Key(), out var cachedValue))
+            {
+                return cachedValue ?? new object(); // Value found in cache
+            }
+
+            // Value not found in cache, generate and cache it
+            var newValue = valueFactory(parameters);
+
+            var cacheEntryOptions = new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = cacheDuration,
+            };
+
+            _cache.Set(key.Key(), newValue, cacheEntryOptions);
+
+            return newValue;
         }
 
         public void Set(CacheKey key, object value, TimeSpan cacheDuration)
         {
-            throw new NotImplementedException();
+            var cacheEntryOptions = new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = cacheDuration,
+            };
+
+            _cache.Set(key.Key(), value, cacheEntryOptions);
         }
     }
 

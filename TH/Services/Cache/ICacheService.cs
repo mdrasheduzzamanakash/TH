@@ -11,7 +11,7 @@
 
         public void Clear();
 
-        public void GetOrSet(CacheKey key, Func<object> valueFactory, TimeSpan cacheDuration);
-        public void GetOrSet(CacheKey key, Func<object> valueFactory, TimeSpan cacheDuration, params object[] parameters);
+        public object GetOrSet(CacheKey key, Func<object> valueFactory, TimeSpan cacheDuration);
+        public object GetOrSet(CacheKey key, Func<object, object[]> valueFactory, TimeSpan cacheDuration, params object[] parameters);
     }
 }

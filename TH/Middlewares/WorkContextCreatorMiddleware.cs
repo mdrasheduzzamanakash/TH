@@ -1,22 +1,21 @@
 ﻿using Microsoft.Extensions.Options;
 using TH.Configurations;
+using TH.Services;
 
 namespace TH.Middlewares
 {
     public class WorkContextCreatorMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly JwtConfig _jwtConfig;
-        public WorkContextCreatorMiddleware(RequestDelegate next, 
-            IOptionsMonitor<JwtConfig> optionsMonitor)
+        public WorkContextCreatorMiddleware(RequestDelegate next)
         {
             _next = next;
-            _jwtConfig = optionsMonitor.CurrentValue;
         }
 
 
         public async Task InvokeAsync(HttpContext context)
         {
+            var _workContext = context.RequestServices.GetService<IWorkContext>();
             // TODO 
             // decode the jwt token 
 

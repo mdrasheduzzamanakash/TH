@@ -11,6 +11,7 @@ using TH.Data;
 using TH.Mapper;
 using TH.Middlewares;
 using TH.Services;
+using TH.Services.Cache;
 using TH.Services.ThirdPartyServices;
 
 namespace TH.Extensions
@@ -84,6 +85,7 @@ namespace TH.Extensions
             builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
             builder.Services.AddScoped<ILogService, LogService>();
             builder.Services.AddScoped<IWorkContext, WorkContext>();
+            builder.Services.AddSingleton<ICacheService, CacheService>();
         }
 
         public static void AddThirdPartyServices(this IServiceCollection services, WebApplicationBuilder builder)
@@ -124,11 +126,11 @@ namespace TH.Extensions
 
             app.UseRefreshTokenMiddleware();
 
-            app.UseWorkContextCreatorMiddleware();
-
             app.UseAuthentication();
 
             app.UseAuthorization();
+
+            app.UseWorkContextCreatorMiddleware();
 
             app.UseCookiePolicy();
         }

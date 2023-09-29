@@ -5,6 +5,7 @@ namespace TH.Services
     public class WorkContext : IWorkContext
     {
         private Customer _customer { get; set; }
+        
         private List<string> _customerRoles { get; set; }
 
         public WorkContext() { }
