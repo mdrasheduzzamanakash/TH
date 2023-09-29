@@ -2,6 +2,7 @@
 {
     public interface ICacheService
     {
+        public bool ContainsKey(CacheKey key);
         public object Get(CacheKey key);
 
         public void Set(CacheKey key, object value, TimeSpan cacheDuration);

@@ -15,6 +15,7 @@ using TH.Configurations;
 using TH.Domains;
 using TH.Models;
 using TH.Services;
+using TH.Services.Cache;
 using TH.Services.ThirdPartyServices;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using JwtRegisteredClaimNames = System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames;
@@ -38,6 +39,7 @@ namespace TH.Controllers
         private readonly IRefreshTokenService _refreshTokenService;
         private readonly ILogService _logService;
         private readonly IEmailService _emailService;
+        private readonly ICacheService _cacheService;
         #endregion
 
         #region Ctor
@@ -48,8 +50,10 @@ namespace TH.Controllers
             ICustomerService customerService,
             IRefreshTokenService refreshTokenService,
             ILogService logService, 
-            IEmailService emailService)
+            IEmailService emailService, 
+            ICacheService cacheService)
         {
+            _cacheService = cacheService;
             _emailService = emailService;
             _logService = logService;
             _refreshTokenService = refreshTokenService;
@@ -178,10 +182,14 @@ namespace TH.Controllers
 
 
                     #region HttpContext authentication 
+                    // terminate previous session
+                    await HttpContext.SignOutAsync();
 
                     var identity = new ClaimsIdentity(authClaims, CookieAuthenticationDefaults.AuthenticationScheme);
                     var principal = new ClaimsPrincipal(identity);
                     var props = new AuthenticationProperties();
+                    
+                    // start new session
                     HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, props).Wait();
 
                     #endregion
@@ -222,7 +230,6 @@ namespace TH.Controllers
 
         public async Task<IActionResult> Logout()
         {
-            // TODO : clear the cookies 
             Response.Cookies.Delete(THDefaults.OneTimeMessage);
             Response.Cookies.Delete(THDefaults.Jwt);
             Response.Cookies.Delete(THDefaults.Refresh);
@@ -230,6 +237,11 @@ namespace TH.Controllers
             await HttpContext.SignOutAsync();
 
             return RedirectToAction("Index", "Home");
+        }
+
+        public async Task<IActionResult> AccessDenied(string returnUrl)
+        {
+            return Ok("hi");
         }
 
         #endregion
@@ -367,9 +379,14 @@ namespace TH.Controllers
 
                     #region HttpContext authentication 
 
+                    // terminate previous session
+                    await HttpContext.SignOutAsync();
+                    
                     var identity = new ClaimsIdentity(authClaims, CookieAuthenticationDefaults.AuthenticationScheme);
                     var principal = new ClaimsPrincipal(identity);
                     var props = new AuthenticationProperties();
+                    
+                    // start new session
                     HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, props).Wait();
 
                     #endregion
@@ -436,9 +453,14 @@ namespace TH.Controllers
 
                         #region HttpContext authentication 
 
+                        // terminate previous session
+                        await HttpContext.SignOutAsync();
+
                         var identity = new ClaimsIdentity(authClaims, CookieAuthenticationDefaults.AuthenticationScheme);
                         var principal = new ClaimsPrincipal(identity);
                         var props = new AuthenticationProperties();
+                        
+                        // start new session
                         HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, props).Wait();
 
                         #endregion
@@ -486,6 +508,13 @@ namespace TH.Controllers
                         };
                         Response.Cookies.Append(THDefaults.Refresh, refreshToken.Token, refreshTokenCookieOptions);
 
+
+                        #endregion
+
+                        #region Caching
+
+                        _cacheService.Set(new CacheKey(email, THDefaults.CacheTypeEmailJustVerified), true, _jwtConfig.ExpiryTimeFrame.Add(TimeSpan.FromMinutes(5)));
+                        _cacheService.Set(new CacheKey(email, THDefaults.CacheTypeUserClaims), authClaims, TimeSpan.FromMinutes(30));
 
                         #endregion
 
@@ -748,10 +777,14 @@ namespace TH.Controllers
 
 
                         #region HttpContext authentication 
+                        // terminate previous session
+                        await HttpContext.SignOutAsync();
 
                         var identity = new ClaimsIdentity(authClaims, CookieAuthenticationDefaults.AuthenticationScheme);
                         var principal_ctx = new ClaimsPrincipal(identity);
                         var props = new AuthenticationProperties();
+                        
+                        // start new session
                         HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal_ctx, props).Wait();
 
                         #endregion

@@ -35,10 +35,16 @@ namespace TH
         public const string CookieDatalayerUserRole = "role";
 
         // Redirection 
-        public const string RedirectUrl = "";
+        public const string RedirectUrl = "RedirectUrl";
+        public const string LoginUrl = "/Auth/Login";
+        public const string LogoutUrl = "/Auth/Logout";
+        public const string AccessDeniedUrl = "/Auth/AccessDenied";
+        public const string TokenRefreshUrl = "/Auth/RefreshToken";
 
         // Cache types
-        public const string CacheTypeCustomer = "CacheTypeCustomer";
+        public const string CacheTypeUserClaims = "CacheTypeUserRoles";
+        public const string CacheTypeEmailJustVerified = "CacheTypeEmailJustVerified";
+
 
     }
 }

@@ -44,8 +44,9 @@ namespace TH.Extensions
             }).AddCookie(options =>
             {
                 options.Cookie.Name = THDefaults.AspToken;
-                options.LoginPath = "/Auth/Login";
-                options.LogoutPath = "/Auth/Logout"; 
+                options.LoginPath = THDefaults.LoginUrl;
+                options.LogoutPath = THDefaults.LogoutUrl;
+                options.AccessDeniedPath = THDefaults.AccessDeniedUrl;
             });
 
 

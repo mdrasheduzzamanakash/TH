@@ -16,9 +16,14 @@ namespace TH.Services.Cache
             throw new NotImplementedException();
         }
 
+        public bool ContainsKey(CacheKey key)
+        {
+            return _cache.TryGetValue(key.Key(), out var _);
+        }
+
         public void Delete(CacheKey key)
         {
-            throw new NotImplementedException();
+            _cache.Remove(key.Key());
         }
 
         public object Get(CacheKey key)
