@@ -1,33 +1,38 @@
-﻿using TH.Domains;
+﻿using System.Security.Claims;
+using TH.Domains;
 
 namespace TH.Services
 {
     public class WorkContext : IWorkContext
     {
-        private Customer _customer { get; set; }
+        private Customer CurrentCustomer { get; set; }
         
-        private List<string> _customerRoles { get; set; }
+        private List<string> Roles { get; set; }
 
-        public WorkContext() { }
+        public WorkContext()
+        {
+            CurrentCustomer = new Customer();
+            Roles = new List<string>();
+        }
 
         public Customer GetCurrentCustomer()
         {
-            return _customer;
+            return CurrentCustomer;
         }
 
         public List<string> GetCurrentCustomerRoles()
         {
-            return _customerRoles;
+            return Roles;
         }
 
         public void SetCurrentCustomer(Customer customer)
         {
-            _customer = customer;
+            CurrentCustomer = customer;
         }
 
         public void SetCurrentCustomerRoles(List<string> roles)
         {
-            _customerRoles = roles;
+            Roles = roles ;
         }
     }
 }

@@ -2,16 +2,16 @@
 {
     public interface ICacheService
     {
-        public bool ContainsKey(CacheKey key);
-        public object Get(CacheKey key);
+        bool ContainsKey(CacheKey key);
+        object Get(CacheKey key);
 
-        public void Set(CacheKey key, object value, TimeSpan cacheDuration);
+        void Set(CacheKey key, object value, TimeSpan cacheDuration);
 
-        public void Delete(CacheKey key);
+        void Delete(CacheKey key);
 
-        public void Clear();
+        void Clear();
 
-        public object GetOrSet(CacheKey key, Func<object> valueFactory, TimeSpan cacheDuration);
-        public object GetOrSet(CacheKey key, Func<object, object[]> valueFactory, TimeSpan cacheDuration, params object[] parameters);
+        Task<object> GetOrSet(CacheKey key, Func<Task<object>> valueFactory, TimeSpan cacheDuration);
+        Task<object> GetOrSet(CacheKey key, Func<List<object>, Task<object>> valueFactory, TimeSpan cacheDuration, List<object> parameters);
     }
 }

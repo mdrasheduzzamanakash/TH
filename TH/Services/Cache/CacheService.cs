@@ -1,4 +1,8 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
+using TH.Configurations;
 
 namespace TH.Services.Cache
 {
@@ -6,6 +10,8 @@ namespace TH.Services.Cache
     public class CacheService : ICacheService
     {
         private readonly IMemoryCache _cache;
+        
+
         public CacheService(IMemoryCache cache)
         {
             _cache = cache;
@@ -31,7 +37,7 @@ namespace TH.Services.Cache
             return _cache.Get(key.Key()) ?? new object();
         }
 
-        public object GetOrSet(CacheKey key, Func<object> valueFactory, TimeSpan cacheDuration)
+        public async Task<object> GetOrSet(CacheKey key, Func<Task<object>> valueFactory, TimeSpan cacheDuration)
         {
             if (_cache.TryGetValue(key.Key(), out var cachedValue))
             {
@@ -39,7 +45,7 @@ namespace TH.Services.Cache
             }
 
             // Value not found in cache, generate and cache it
-            var newValue = valueFactory();
+            var newValue = await valueFactory();
 
             var cacheEntryOptions = new MemoryCacheEntryOptions
             {
@@ -51,15 +57,15 @@ namespace TH.Services.Cache
             return newValue;
         }
 
-        object ICacheService.GetOrSet(CacheKey key, Func<object, object[]> valueFactory, TimeSpan cacheDuration, params object[] parameters)
+        public async Task<object> GetOrSet(CacheKey key, Func<List<object>, Task<object>> valueFactory, TimeSpan cacheDuration, List<object> parameters)
         {
             if (_cache.TryGetValue(key.Key(), out var cachedValue))
             {
-                return cachedValue ?? new object(); // Value found in cache
+                return cachedValue ?? new object();
             }
 
             // Value not found in cache, generate and cache it
-            var newValue = valueFactory(parameters);
+            var newValue = await valueFactory(parameters);
 
             var cacheEntryOptions = new MemoryCacheEntryOptions
             {
@@ -80,6 +86,7 @@ namespace TH.Services.Cache
 
             _cache.Set(key.Key(), value, cacheEntryOptions);
         }
+
     }
 
 }

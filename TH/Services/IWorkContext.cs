@@ -1,4 +1,5 @@
-﻿using TH.Domains;
+﻿using System.Security.Claims;
+using TH.Domains;
 
 namespace TH.Services
 {
@@ -7,6 +8,6 @@ namespace TH.Services
         Customer GetCurrentCustomer();
         void SetCurrentCustomer(Customer customer);
         List<string> GetCurrentCustomerRoles();
-        void SetCurrentCustomerRoles(List<string> roles);
+        void SetCurrentCustomerRoles(List<string> claims);
     }
 }

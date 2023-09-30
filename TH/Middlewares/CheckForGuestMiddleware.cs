@@ -20,13 +20,16 @@ namespace TH.Middlewares
         public async Task InvokeAsync(HttpContext context)
         {
             var jwt = context.Request.Cookies[THDefaults.Jwt];
-            var refresh = context.Request.Cookies[THDefaults.Refresh];
 
             if(jwt == null)
             {
+                // remove previous session
+                await context.SignOutAsync();
                 // assuming visitor as guest
                 var authClaims = new List<Claim>
                 {
+                    // TODO : startup-task create a guest user in database
+                    new Claim(ClaimTypes.Email, "guest@guest.com"),
                     new Claim(ClaimTypes.Role, THDefaults.Guest)
                 };
 

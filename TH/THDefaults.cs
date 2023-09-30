@@ -44,6 +44,7 @@ namespace TH
         // Cache types
         public const string CacheTypeUserClaims = "CacheTypeUserRoles";
         public const string CacheTypeEmailJustVerified = "CacheTypeEmailJustVerified";
+        public const string CacheTypeCustomer = "CacheTypeCustomer";
 
 
     }
