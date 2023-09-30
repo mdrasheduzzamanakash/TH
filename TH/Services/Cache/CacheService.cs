@@ -11,7 +11,6 @@ namespace TH.Services.Cache
     {
         private readonly IMemoryCache _cache;
         
-
         public CacheService(IMemoryCache cache)
         {
             _cache = cache;

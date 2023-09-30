@@ -51,42 +51,42 @@ namespace TH.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "00a98a96-00b9-4502-bfe6-49a31868049c",
+                            Id = "6aa214ae-4111-4178-8053-c82370059546",
                             ConcurrencyStamp = "1",
                             Name = "Admin",
                             NormalizedName = "Admin"
                         },
                         new
                         {
-                            Id = "7d2420da-c9bb-4732-8b54-cb5ff256d783",
+                            Id = "97f82595-5b9f-4f0f-8bb3-26eecb267d58",
                             ConcurrencyStamp = "2",
                             Name = "Doctor",
                             NormalizedName = "Doctor"
                         },
                         new
                         {
-                            Id = "1ee1bbf4-be60-4a44-87ac-f38644e42eca",
+                            Id = "84533c76-2ff6-46ef-b37b-dfed60071583",
                             ConcurrencyStamp = "3",
                             Name = "Patient",
                             NormalizedName = "Patient"
                         },
                         new
                         {
-                            Id = "7c03d599-8f46-4efc-9088-3e8d4330c80e",
+                            Id = "16f0e124-48ea-4721-8ae3-4872add68403",
                             ConcurrencyStamp = "4",
                             Name = "DoctorUnverified",
                             NormalizedName = "DoctorUnverified"
                         },
                         new
                         {
-                            Id = "610f985c-8065-4704-b91d-457f05460caa",
+                            Id = "d0a381e1-0756-494e-96f0-038b642ade0b",
                             ConcurrencyStamp = "5",
                             Name = "PatientUnverified",
                             NormalizedName = "PatientUnverified"
                         },
                         new
                         {
-                            Id = "b15bbcef-cf62-45a2-98e6-3cf2450ec39d",
+                            Id = "28eb85fb-53c4-4781-ab13-bbbf0bd9184d",
                             ConcurrencyStamp = "6",
                             Name = "Guest",
                             NormalizedName = "Guest"

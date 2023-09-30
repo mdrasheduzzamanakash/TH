@@ -22,12 +22,7 @@ using JwtRegisteredClaimNames = System.IdentityModel.Tokens.Jwt.JwtRegisteredCla
 
 namespace TH.Controllers
 {
-    [Authorize(Roles =
-        THDefaults.Doctor + "," +
-        THDefaults.Patient + "," +
-        THDefaults.DoctorUnverified + "," +
-        THDefaults.PatientUnverified + "," +
-        THDefaults.Guest)]
+    
     public class AuthController : Controller
     {
         #region Fields
@@ -99,11 +94,15 @@ namespace TH.Controllers
         #endregion
 
         #region Login / Logout
+
+        [Authorize(Roles = THDefaults.Guest)]
         public IActionResult Login()
         {
             return View(new LoginModel());
         }
 
+
+        [Authorize(Roles = THDefaults.Guest)]
         [HttpPost]
         public async Task<IActionResult> Login(LoginModel model)
         {
@@ -228,6 +227,12 @@ namespace TH.Controllers
             return RedirectToAction("Index", "Home");
         }
 
+
+        [Authorize(Roles =
+            THDefaults.DoctorUnverified + "," +
+            THDefaults.PatientUnverified + "," +
+            THDefaults.Doctor + "," +
+            THDefaults.Patient)]
         public async Task<IActionResult> Logout()
         {
             Response.Cookies.Delete(THDefaults.OneTimeMessage);
@@ -239,6 +244,7 @@ namespace TH.Controllers
             return RedirectToAction("Index", "Home");
         }
 
+        [AllowAnonymous]
         public async Task<IActionResult> AccessDenied(string returnUrl)
         {
             return Ok("hi");
@@ -248,11 +254,15 @@ namespace TH.Controllers
 
         #region Register
 
+
+        [Authorize(Roles = THDefaults.Guest)]
         public IActionResult Register()
         {
             return View(new RegisterModel());
         }
 
+
+        [Authorize(Roles = THDefaults.Guest)]
         [HttpPost]
         public async Task<IActionResult> Register(RegisterModel model, string role)
         {
@@ -420,6 +430,10 @@ namespace TH.Controllers
 
         [HttpGet]
         [Route("Authentication/ConfirmEmail")]
+        [Authorize(Roles = 
+            THDefaults.DoctorUnverified + "," +
+            THDefaults.PatientUnverified + "," +
+            THDefaults.Guest)]
         public async Task<IActionResult> ConfirmEmail(string emailToken, string email)
         {
             var user = await _userManager.FindByEmailAsync(email);
@@ -442,6 +456,7 @@ namespace TH.Controllers
                         // Update role of the identity user 
                         await _userManager.AddToRoleAsync(user, customer.OnRole);
 
+                        /*
                         // create jwt token 
                         var authClaims = new List<Claim>
                         {
@@ -511,10 +526,12 @@ namespace TH.Controllers
 
                         #endregion
 
+                        */
+
+
                         #region Caching
 
                         _cacheService.Set(new CacheKey(email, THDefaults.CacheTypeEmailJustVerified), true, _jwtConfig.ExpiryTimeFrame.Add(TimeSpan.FromMinutes(5)));
-                        _cacheService.Set(new CacheKey(email, THDefaults.CacheTypeUserClaims), authClaims, TimeSpan.FromMinutes(30));
 
                         #endregion
 
@@ -524,7 +541,8 @@ namespace TH.Controllers
                             Email = email,
                             Message = "Email verification successfull."
                         };
-                        return View(model);
+                        //TODO create a page
+                        return Ok("Verification done");
                     }
                     else
                     {
@@ -553,7 +571,6 @@ namespace TH.Controllers
                     Message = "Unable to validate! Please register again."
                 };
                 return View(model);
-
             }
 
         }
@@ -562,11 +579,13 @@ namespace TH.Controllers
 
         #region Reset Password / Refresh Token
 
+        [Authorize(Roles = THDefaults.Guest)]
         public IActionResult ForgotPassword()
         {
             return View(new ForgotPasswordModel ());
         }
 
+        [Authorize(Roles = THDefaults.Guest)]
         [HttpPost]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordModel model)
         {
@@ -596,6 +615,7 @@ namespace TH.Controllers
             return View(model);
         }
 
+        [Authorize(Roles = THDefaults.Guest)]
         [HttpGet("reset-password")]
         public IActionResult ResetPassword(string token, string email)
         {
@@ -603,6 +623,7 @@ namespace TH.Controllers
             return View(model);
         }
 
+        [Authorize(Roles = THDefaults.Guest)]
         [HttpPost]
         [AllowAnonymous]
         [Route("reset-password")]
@@ -637,6 +658,7 @@ namespace TH.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> RefreshToken()
         {
             var jwt = Request.Cookies[THDefaults.Jwt];
@@ -677,11 +699,16 @@ namespace TH.Controllers
                     }
                     var utcExpiryDate = long.Parse(principal.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Exp)?.Value ?? "");
                     var expiryDate = UnixTimeStampToDate(utcExpiryDate);
+                    
+                    var email = principal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value ?? "";
+                    var cache_key_check = new CacheKey(email, THDefaults.CacheTypeEmailJustVerified);
 
                     // check the exiry date of the jwt token 
-                    if (expiryDate < DateTime.UtcNow)
+                    if (expiryDate < DateTime.UtcNow || _cacheService.ContainsKey(cache_key_check))
                     {
-                        var email = principal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value ?? "";
+                        // first remove the key 
+                        _cacheService.Delete(cache_key_check);
+
                         var user = await _userManager.FindByEmailAsync(email);
 
                         if(user == null)
@@ -829,7 +856,7 @@ namespace TH.Controllers
                             HttpOnly = true,
                             Expires = DateTime.UtcNow.AddMonths(1)
                         };
-                        Response.Cookies.Append(THDefaults.Refresh, refreshToken.Token, refreshTokenCookieOptions);
+                        Response.Cookies.Append(THDefaults.Refresh, newRefreshToken.Token, refreshTokenCookieOptions);
 
 
                         #endregion
@@ -841,7 +868,6 @@ namespace TH.Controllers
                     }
                     else
                     {
-                        var email = principal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value ?? "";
                         var user = await _userManager.FindByEmailAsync(email);
 
                         if (user == null)

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TH.Migrations
 {
     /// <inheritdoc />
-    public partial class initialMigration : Migration
+    public partial class initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -221,12 +221,12 @@ namespace TH.Migrations
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
                 values: new object[,]
                 {
-                    { "00a98a96-00b9-4502-bfe6-49a31868049c", "1", "Admin", "Admin" },
-                    { "1ee1bbf4-be60-4a44-87ac-f38644e42eca", "3", "Patient", "Patient" },
-                    { "610f985c-8065-4704-b91d-457f05460caa", "5", "PatientUnverified", "PatientUnverified" },
-                    { "7c03d599-8f46-4efc-9088-3e8d4330c80e", "4", "DoctorUnverified", "DoctorUnverified" },
-                    { "7d2420da-c9bb-4732-8b54-cb5ff256d783", "2", "Doctor", "Doctor" },
-                    { "b15bbcef-cf62-45a2-98e6-3cf2450ec39d", "6", "Guest", "Guest" }
+                    { "16f0e124-48ea-4721-8ae3-4872add68403", "4", "DoctorUnverified", "DoctorUnverified" },
+                    { "28eb85fb-53c4-4781-ab13-bbbf0bd9184d", "6", "Guest", "Guest" },
+                    { "6aa214ae-4111-4178-8053-c82370059546", "1", "Admin", "Admin" },
+                    { "84533c76-2ff6-46ef-b37b-dfed60071583", "3", "Patient", "Patient" },
+                    { "97f82595-5b9f-4f0f-8bb3-26eecb267d58", "2", "Doctor", "Doctor" },
+                    { "d0a381e1-0756-494e-96f0-038b642ade0b", "5", "PatientUnverified", "PatientUnverified" }
                 });
 
             migrationBuilder.CreateIndex(
