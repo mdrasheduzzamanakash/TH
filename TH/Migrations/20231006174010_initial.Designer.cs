@@ -12,7 +12,7 @@ using TH.Data;
 namespace TH.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20230930142153_initial")]
+    [Migration("20231006174010_initial")]
     partial class initial
     {
         /// <inheritdoc />
@@ -54,42 +54,42 @@ namespace TH.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "6aa214ae-4111-4178-8053-c82370059546",
+                            Id = "7c2469b4-17e9-4791-8678-902524257f53",
                             ConcurrencyStamp = "1",
                             Name = "Admin",
                             NormalizedName = "Admin"
                         },
                         new
                         {
-                            Id = "97f82595-5b9f-4f0f-8bb3-26eecb267d58",
+                            Id = "0f0a7da3-ab4d-4c4f-81c4-7806aa3a7b1d",
                             ConcurrencyStamp = "2",
                             Name = "Doctor",
                             NormalizedName = "Doctor"
                         },
                         new
                         {
-                            Id = "84533c76-2ff6-46ef-b37b-dfed60071583",
+                            Id = "eb3c0094-00e5-4eae-8416-7c8362e8fbac",
                             ConcurrencyStamp = "3",
                             Name = "Patient",
                             NormalizedName = "Patient"
                         },
                         new
                         {
-                            Id = "16f0e124-48ea-4721-8ae3-4872add68403",
+                            Id = "ff7a4ff0-2e23-481e-928e-53763e236b92",
                             ConcurrencyStamp = "4",
                             Name = "DoctorUnverified",
                             NormalizedName = "DoctorUnverified"
                         },
                         new
                         {
-                            Id = "d0a381e1-0756-494e-96f0-038b642ade0b",
+                            Id = "72ab1706-e1e4-428b-918d-05f9ba46c17c",
                             ConcurrencyStamp = "5",
                             Name = "PatientUnverified",
                             NormalizedName = "PatientUnverified"
                         },
                         new
                         {
-                            Id = "28eb85fb-53c4-4781-ab13-bbbf0bd9184d",
+                            Id = "a138118e-8f00-4336-bb78-1f4d7ee7ce0b",
                             ConcurrencyStamp = "6",
                             Name = "Guest",
                             NormalizedName = "Guest"

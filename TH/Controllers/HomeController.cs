@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using TH.Models;
+using TH.Services;
 
 namespace TH.Controllers
 {
@@ -14,10 +15,13 @@ namespace TH.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly IWorkContext _workContext;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, 
+            IWorkContext workContext)
         {
             _logger = logger;
+            _workContext = workContext;
         }
 
         public IActionResult Index()

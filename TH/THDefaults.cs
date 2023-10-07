@@ -46,6 +46,5 @@ namespace TH
         public const string CacheTypeEmailJustVerified = "CacheTypeEmailJustVerified";
         public const string CacheTypeCustomer = "CacheTypeCustomer";
 
-
     }
 }

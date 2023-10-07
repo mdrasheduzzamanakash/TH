@@ -17,5 +17,11 @@ namespace TH.Services
             var user = await _dbSet.FirstOrDefaultAsync(u => u.Email == email);
             return user;
         }
+
+        public async Task<List<Customer>> FindVerifiedDoctorsAsync()
+        {
+            var doctors = await _dbSet.Where(x => x.OnRole == THDefaults.Doctor).ToListAsync();
+            return doctors;
+        }
     }
 }

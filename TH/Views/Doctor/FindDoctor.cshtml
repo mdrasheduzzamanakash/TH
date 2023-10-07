@@ -1,0 +1,79 @@
+﻿@model TH.Models.FindDoctorModel
+
+@{
+    Layout = "_RootNavFoot";
+    ViewData["Title"] = "Find Doctor Page";
+}
+
+<style>
+
+    .card {
+        border: none;
+        border-radius: 10px;
+        transition: all 1s;
+        cursor: pointer
+    }
+
+        .card:hover {
+            -webkit-box-shadow: 3px 5px 17px -4px #777777;
+            box-shadow: 3px 5px 17px -4px #777777
+        }
+
+    .ratings i {
+        color: green
+    }
+
+    .apointment button {
+        border-radius: 20px;
+        background-color: #eee;
+        color: #000;
+        border-color: #eee;
+        font-size: 13px
+    }
+</style>
+
+<main style="margin-top:70px;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <form class="d-flex">
+                    <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+                    <button class="btn btn-outline-primary" type="submit">Search</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-5 mb-5">
+
+        <div class="row g-2">
+            @foreach(var doctor in Model.doctors)
+            {
+                <div class="col-md-3">
+                    <div class="card p-2 py-3 text-center">
+                        <div class="img mb-2"> <img src=@doctor.profileImageLink width="70" class="rounded-circle"> </div>
+                        <h5 class="mb-0">@doctor.Name</h5>
+                        @*<small>Neurosurgeon</small>*@
+                        @*<div class="ratings mt-2"> <i class="fa fa-star"></i> <i class="fa fa-star"></i> <i class="fa fa-star"></i> <i class="fa fa-star"></i> </div>*@
+                        <div class="mt-4 apointment"> <button class="btn btn-success text-uppercase">Book Appointment</button> </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mt-4">
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+                </li>
+                <li class="page-item"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="#">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</main>

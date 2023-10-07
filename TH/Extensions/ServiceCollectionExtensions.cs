@@ -8,6 +8,7 @@ using System.Configuration;
 using System.Text;
 using TH.Configurations;
 using TH.Data;
+using TH.Factories;
 using TH.Mapper;
 using TH.Middlewares;
 using TH.Services;
@@ -81,11 +82,15 @@ namespace TH.Extensions
 
         public static void AddApplicationServices(this IServiceCollection services, WebApplicationBuilder builder)
         {
+            // services 
             builder.Services.AddScoped<ICustomerService, CustomerService>();
             builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
             builder.Services.AddScoped<ILogService, LogService>();
             builder.Services.AddScoped<IWorkContext, WorkContext>();
             builder.Services.AddSingleton<ICacheService, CacheService>();
+
+            // factories 
+            builder.Services.AddScoped<IFindDoctorFactory, FindDoctorFactory>();
         }
 
         public static void AddThirdPartyServices(this IServiceCollection services, WebApplicationBuilder builder)

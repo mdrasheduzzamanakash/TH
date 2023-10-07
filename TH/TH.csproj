@@ -26,8 +26,9 @@
   <ItemGroup>
     <Folder Include="Areas\Admin\Data\" />
     <Folder Include="Areas\Admin\Models\" />
-    <Folder Include="Factories\" />
     <Folder Include="Validations\" />
+    <Folder Include="Views\Communication\" />
+    <Folder Include="Views\Patient\" />
   </ItemGroup>
 
 </Project>
